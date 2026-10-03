@@ -1,0 +1,13 @@
+{
+  "name": "mamo-airkeeper",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node tools/build-production.cjs",
+    "test": "node tools/check-regressions.cjs && node tools/check-production.cjs"
+  },
+  "devDependencies": {
+    "html-minifier-terser": "7.2.0",
+    "terser": "5.51.2"
+  }
+}
