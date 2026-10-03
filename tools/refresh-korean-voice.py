@@ -1,10 +1,11 @@
 """Regenerate existing narration with a Korean voice; preserve caption keys."""
 import asyncio
-import base64
 import hashlib
 import json
 import pathlib
 import re
+import subprocess
+import shutil
 
 import edge_tts
 
@@ -27,16 +28,20 @@ def spoken(text):
     return re.sub(r'\s+', ' ', text).strip(' ,')
 
 async def main():
-    path = ROOT / 'index.html'
+    path = ROOT / 'app.js'
     html = path.read_text(encoding='utf-8')
     match = re.search(r'var AUD=(.*?);\s*\n', html)
-    captions = json.loads(match.group(1))
+    old = json.loads(match.group(1))
+    captions = json.loads(subprocess.check_output(['node', str(ROOT / 'tools/list-narration.cjs')], encoding='utf-8'))
     CACHE.mkdir(exist_ok=True)
     sem = asyncio.Semaphore(4)
     completed = 0
 
     async def make(text):
         nonlocal completed
+        if text in old and (ROOT / old[text]).is_file():
+            completed += 1
+            return text, old[text]
         transcript = spoken(text)
         filename = hashlib.sha256((VOICE + '-3%' + transcript).encode()).hexdigest() + '.mp3'
         target = CACHE / filename
@@ -55,10 +60,13 @@ async def main():
         completed += 1
         if completed % 20 == 0 or completed == len(captions):
             print(f'Generated {completed}/{len(captions)}', flush=True)
-        return text, base64.b64encode(target.read_bytes()).decode()
+        output = ROOT / 'assets/audio' / (hashlib.sha256(target.read_bytes()).hexdigest()[:24] + '.mp3')
+        output.parent.mkdir(exist_ok=True)
+        shutil.copyfile(target, output)
+        return text, output.relative_to(ROOT).as_posix()
 
     clips = dict(await asyncio.gather(*(make(text) for text in captions)))
-    assert clips.keys() == captions.keys()
+    assert set(clips) == set(captions)
     html = html[:match.start(1)] + json.dumps(clips, ensure_ascii=False, separators=(',', ':')) + html[match.end(1):]
     path.write_text(html, encoding='utf-8')
     print(f'Updated {len(clips)} clips using {VOICE}', flush=True)
