@@ -208,7 +208,7 @@ var TABS=[["home","홈"],["dust","비산먼지"],["air","대기배출"],["rep","
 $("tabbar").innerHTML=TABS.map(function(t){return '<button class="tab" type="button" data-go="'+t[0]+'">'+svg(t[0])+t[1]+'</button>';}).join("");
 
 /* ---------- 화면 이동 ---------- */
-var SUBTITLE={home:"미세먼지 민간점검단 업무지원",dust:"감시 1 · 비산먼지 억제조치",air:"감시 2 · 대기배출사업장",rep:"보고문안 초안",rules:"사업 개요 · 준수 사항",library:"기준 검색 · 즐겨찾기",offline:"오프라인 자료 · 앱 설치"};
+var SUBTITLE={home:"미세먼지 민간점검단 업무지원",dust:"감시 1 · 비산먼지 억제조치",air:"감시 2 · 대기배출사업장",rep:"보고문안 초안",rules:"사업 개요 · 준수 사항",library:"기준 검색 · 즐겨찾기"};
 function go(v,skipHash){
   if(!SUBTITLE[v])v="home";
   document.querySelectorAll("[data-view]").forEach(function(s){s.hidden=s.dataset.view!==v;});
@@ -218,7 +218,6 @@ function go(v,skipHash){
   if(v==="dust"){$("wind").value=S.dust.wind;$("nearHome").checked=S.dust.near;$("siteName").value=S.dust.name;renderSites();renderDust();}
   if(v==="air"){$("airName").value=S.air.name;renderAir();}
   if(v==="library")renderSearch();
-  if(v==="offline")checkOffline();
   window.scrollTo(0,0); if(!skipHash&&location.hash!=="#"+v){try{history.pushState(null,"","#"+v);}catch(e){}}
 }
 document.addEventListener("click",function(e){var b=e.target.closest("[data-go]");if(b)go(b.dataset.go);});
@@ -459,7 +458,7 @@ function xpNextChunk(){
     var fin=false; function nx(){ if(fin||tok!==XP.tok||!XP.play) return; fin=true; setTimeout(function(){ if(tok===XP.tok&&XP.play) xpNextChunk(); },220); }
     XP.timerChunk=false; XP.chEnd=performance.now()+chunkDur(t)*2.2+2500;
     AU.onended=nx; AU.src=AUD[t];
-    var pr=AU.play(); if(pr&&pr.catch) pr.catch(function(){ if(tok!==XP.tok) return; XP.timerChunk=true; XP.chEnd=performance.now()+chunkDur(t);toast("음성을 불러오지 못했습니다. 연결 또는 음성 자료 저장 상태를 확인하세요."); });
+    var pr=AU.play(); if(pr&&pr.catch) pr.catch(function(){ if(tok!==XP.tok) return; XP.timerChunk=true; XP.chEnd=performance.now()+chunkDur(t);toast("음성을 불러오지 못했습니다. 인터넷 연결을 확인하세요."); });
   } else if(VOICE.mode==="dev"&&VOICE.ok&&VOICE.v){
     var u=new SpeechSynthesisUtterance(speakText(t)); u.lang="ko-KR"; u.voice=VOICE.v; u.rate=0.97; u.pitch=1;
     var done=false; function next(){ if(done||tok!==XP.tok||!XP.play) return; done=true; setTimeout(function(){ if(tok===XP.tok&&XP.play) xpNextChunk(); },250); }
@@ -512,30 +511,26 @@ $("xpStage").addEventListener("click",function(e){var r=this.getBoundingClientRe
 document.addEventListener("keydown",function(e){if($("xp").hidden)return;if(e.key==="Escape")xpClose();if(e.key==="ArrowRight"&&XP.i<XP.ex.shots.length-1)xpShow(XP.i+1);if(e.key==="ArrowLeft")xpShow(XP.i-1);if(e.key===" "&&!e.target.closest("button,input,textarea,select,a")){e.preventDefault();xpToggle();}});
 document.addEventListener("click",function(e){var b=e.target.closest("[data-ex]");if(b){e.preventDefault();xpOpen(b.dataset.ex);}});
 
-/* ---------- 테마 ---------- */
-/* ---------- 설치·오프라인 자료팩 ---------- */
-var PACK="airkeeper-audio-v1",audioStop=false,installPrompt=null;
-async function checkOffline(){
-  if(!("serviceWorker" in navigator)||!window.isSecureContext){$("offlineStatus").textContent="이 환경에서는 오프라인 저장을 사용할 수 없습니다. HTTPS 배포 주소에서 여세요.";return;}
-  try{var ready=await navigator.serviceWorker.getRegistration(),keys=await caches.keys(),base=keys.filter(function(k){return k.indexOf("airkeeper-base-")===0;});if(ready&&ready.active&&base.length&&load("ms.packVersion","")!==base.join(",")){save("ms.packDate",new Date().toLocaleString("ko-KR"));save("ms.packVersion",base.join(","));}$("offlineStatus").textContent=ready&&ready.active&&base.length?"법령·그림·사진 기본 자료 저장 완료 · "+(load("ms.packDate","")||"이 기기")+(navigator.onLine?"":" · 인터넷 연결 없음"):"기본 자료 저장 중입니다. 잠시 후 다시 확인하세요.";
-    var cache=await caches.open(PACK),urls=Object.values(AUD),matches=await Promise.all(urls.map(function(url){return cache.match(new URL(url,location.href).href);})),count=matches.filter(Boolean).length;$("audioPackStatus").textContent="한국어 음성 "+count+" / "+urls.length+"개 저장"+(count===urls.length?" · 오프라인 청취 가능":"");return count;
-  }catch(e){$("offlineStatus").textContent="기본 자료 저장에 실패했습니다. 인터넷 연결과 브라우저 저장 공간을 확인하세요.";}
+/* Retire only this app's previous offline worker and resource caches. */
+async function retireOffline(){
+  var workerUrl=new URL("sw.js",location.href).href;
+  var controlled=!!(navigator.serviceWorker&&navigator.serviceWorker.controller&&navigator.serviceWorker.controller.scriptURL===workerUrl);
+  var workerRetired=false;
+  if("serviceWorker" in navigator){
+    try{var registrations=await navigator.serviceWorker.getRegistrations();var removed=await Promise.all(registrations.filter(function(registration){return [registration.active,registration.waiting,registration.installing].some(function(worker){return worker&&worker.scriptURL===workerUrl;});}).map(function(registration){return registration.unregister();}));workerRetired=removed.every(Boolean);}catch(error){console.warn("이전 오프라인 서비스 정리를 다시 시도해야 합니다.");}
+  }
+  if("caches" in window){
+    try{var keys=await caches.keys();await Promise.all(keys.filter(function(key){return key.indexOf("airkeeper-base-")===0||key==="airkeeper-audio-v1";}).map(function(key){return caches.delete(key);}));}catch(error){console.warn("이전 오프라인 자료 캐시 정리를 다시 시도해야 합니다.");}
+  }
+  try{localStorage.removeItem("ms.packDate");localStorage.removeItem("ms.packVersion");}catch(error){}
+  // An unregistered worker may still control this document until navigation.
+  if(controlled&&workerRetired&&navigator.onLine)location.reload();
 }
-async function initOffline(){if(!("serviceWorker" in navigator)||!window.isSecureContext){checkOffline();return;}var hadController=!!navigator.serviceWorker.controller;navigator.serviceWorker.addEventListener("controllerchange",function(){if(hadController)location.reload();});try{await navigator.serviceWorker.register("sw.js",{updateViaCache:"none"});await navigator.serviceWorker.ready;checkOffline();}catch(e){$("offlineStatus").textContent="기본 자료를 저장하지 못했습니다. 연결을 확인하고 앱을 다시 여세요.";}}
-$("refreshPack").addEventListener("click",checkOffline);
-window.addEventListener("online",checkOffline);window.addEventListener("offline",checkOffline);
-$("saveAudioPack").addEventListener("click",async function(){var button=this;if(!("caches" in window)||!window.isSecureContext){toast("HTTPS 배포 주소에서 음성을 저장하세요");return;}audioStop=false;button.disabled=true;$("cancelAudioPack").hidden=false;$("audioProgress").hidden=false;var urls=Object.values(AUD),cursor=0,done=0,failed=0;$("audioProgress").max=urls.length;$("audioProgress").value=0;
-  try{var cache=await caches.open(PACK);await Promise.all([0,1,2,3].map(async function(){while(cursor<urls.length&&!audioStop){var url=urls[cursor++];try{if(!await cache.match(url)){var response=await fetch(url);if(!response.ok)throw Error("download");await cache.put(url,response);}done++;}catch(e){failed++;}$("audioProgress").value=done;$("audioPackStatus").textContent="저장 중 · "+done+" / "+urls.length+"개"+(failed?" · 실패 "+failed+"개":"");}}));}catch(e){failed++;}
-  button.disabled=false;$("cancelAudioPack").hidden=true;await checkOffline();toast(audioStop?"저장을 중단했습니다. 저장한 음성은 유지됩니다.":failed?"일부 음성을 저장하지 못했습니다. 다시 시도하세요.":"한국어 음성 자료를 모두 저장했습니다");
-});
-$("cancelAudioPack").addEventListener("click",function(){audioStop=true;});
-window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();installPrompt=e;$("installApp").hidden=false;});
-$("installApp").addEventListener("click",async function(){if(!installPrompt)return;await installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;this.hidden=true;});
-window.addEventListener("appinstalled",function(){$("installApp").hidden=true;toast("홈 화면에 앱을 설치했습니다");});
 
+/* ---------- 테마 ---------- */
 (function(){var t=load("ms.theme",null);document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light");})();
 $("themeBtn").addEventListener("click",function(){var r=document.documentElement,c=r.getAttribute("data-theme");var dark=c?c==="dark":matchMedia("(prefers-color-scheme: dark)").matches;var n=dark?"light":"dark";r.setAttribute("data-theme",n);save("ms.theme",n);});
 
 renderSites();renderDust();renderAir();renderVio();renderJInputs();wall();windJ();renderReport();
-renderSearch();route();window.addEventListener("hashchange",route);window.addEventListener("popstate",route);initOffline();
+renderSearch();route();window.addEventListener("hashchange",route);window.addEventListener("popstate",route);retireOffline();
 })();

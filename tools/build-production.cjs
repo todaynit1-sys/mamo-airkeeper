@@ -64,17 +64,8 @@ async function build() {
     await write(file, await fs.readFile(path.join(root, file)));
   }
   await write('manifest.webmanifest', JSON.stringify(JSON.parse(await read('manifest.webmanifest'))));
-  const urls = ['index.html', bundlePath, 'manifest.webmanifest', 'assets/icon-192.png',
-    'assets/icon-512.png', 'assets/law-byl14.pdf',
-    ...['l1', 'l2', 'w1', 'w2', 'w3', 'edu_shoot'].map(key => photos[key])];
-  const digest = crypto.createHash('sha256');
-  for (const url of urls) digest.update(await fs.readFile(path.join(output, url)));
-  const version = digest.digest('hex').slice(0, 16);
-  await write('precache.js', await compress('self.PRECACHE_VERSION=' + JSON.stringify(version) +
-    ';self.PRECACHE_URLS=' + JSON.stringify(urls) + ';'));
-  // The build marker changes the worker bytes when cached product files change.
-  const worker = await compress(await read('sw.js'));
-  await write('sw.js', '/* build ' + version + ' */\n' + worker);
+  // Keep the retirement worker at its old URL for previously installed clients.
+  await write('sw.js', await compress(await read('sw.js')));
   console.log('Production build:', bundlePath, '— no original scripts or source maps');
 }
 build().catch(error => {console.error(error); process.exitCode = 1;});

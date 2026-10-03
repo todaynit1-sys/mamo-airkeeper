@@ -539,7 +539,6 @@ main p:not(.maker) a{display:inline-block;padding:8px 4px;margin:-8px -4px}
 .law-content{min-width:0;flex:1}.law-content>p{margin:0}.lawli li,.search-result{scroll-margin-top:85px}
 .entry-actions{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.entry-actions .btn{min-height:36px;padding:6px 10px;font-size:12px}.entry-actions [aria-pressed="true"]{color:var(--primary);background:var(--primary-soft);border-color:var(--primary)}
 .search-result{padding:14px 0;border-bottom:1px solid var(--border)}.result-link{display:block;color:var(--fg);text-decoration:none}.result-link b{display:block;font-size:16px}.result-link p{font-size:14px;line-height:1.6;margin:6px 0;color:var(--fg-muted)}
-#audioProgress{width:100%;height:10px;accent-color:var(--primary);margin:12px 0}
 #byl14 details,#vioList details{scroll-margin-top:85px}
 @media(max-width:360px){.home-tools .btn{font-size:12px;padding:8px 7px}.modcard h2{font-size:19px}}
 </style>
@@ -573,7 +572,7 @@ main p:not(.maker) a{display:inline-block;padding:8px 4px;margin:-8px -4px}
     <div class="mtop"><span class="mico t-sky" id="icoAir"></span><div><div class="eyebrow">감시 2 · 법 제23·31조</div><h2>대기오염물질 배출사업장 위반 여부 확인</h2></div></div>
     <p>방지시설 미가동·가지배출관·부식 방치 등 외부에서 보이는 위반 의심 확인</p>
   </button>
-  <div class="home-tools"><button class="btn sec" type="button" data-go="library">기준 검색</button><button class="btn sec" type="button" id="homeFavorites">즐겨찾기</button><button class="btn sec" type="button" data-go="offline">오프라인 자료</button></div>
+  <div class="home-tools"><button class="btn sec" type="button" data-go="library">기준 검색</button><button class="btn sec" type="button" id="homeFavorites">즐겨찾기</button></div>
   <div class="menu">
     <button class="mcard" type="button" data-go="rep"><span class="mico t-teal" id="icoRep"></span><span class="mtxt"><b>보고문안 초안</b><span>입력하면 초안 완성 · 복사해서 업무폰에</span></span></button>
     <button class="mcard" type="button" data-go="rules"><span class="mico t-slate" id="icoRules"></span><span class="mtxt"><b>사업 개요 · 준수 사항</b><span>사업 목적 · 준수 사항</span></span></button>
@@ -781,12 +780,6 @@ main p:not(.maker) a{display:inline-block;padding:8px 4px;margin:-8px -4px}
 <section class="view" data-view="library" hidden>
   <div class="page-h"><h1>기준 검색 · 즐겨찾기</h1></div>
   <div class="card"><div class="field"><label for="lawSearch">법령·작업명 검색</label><input id="lawSearch" type="search" placeholder="예: 세륜, 방진벽, 살수, 가지배출관" autocomplete="off"></div><label class="check"><input type="checkbox" id="favoritesOnly"><span>즐겨찾기만 보기</span></label><p class="small muted" id="searchCount" role="status"></p><div id="searchResults"></div></div>
-</section>
-<section class="view" data-view="offline" hidden>
-  <div class="page-h"><h1>오프라인 자료 · 앱 설치</h1></div>
-  <div class="card"><h2>법령·그림 자료</h2><p class="small" id="offlineStatus" role="status">오프라인 자료를 준비하고 있습니다.</p><p class="small muted">법령 기준일 2026.9.18 · 중요 기준 확인일 2026.10.03. 최초 저장 후 법령·그림·사진을 인터넷 연결 없이 열 수 있습니다. 국가법령정보센터 원문은 인터넷 연결이 필요합니다.</p><button class="btn sec" id="refreshPack" type="button">기본 자료 저장 상태 확인</button></div>
-  <div class="card"><h2>한국어 음성 자료</h2><p class="small">음성은 설명을 재생할 때 불러옵니다. 현장에서 인터넷 없이 듣고 싶다면 미리 저장하세요.</p><p class="small muted" id="audioPackStatus" role="status">저장 상태 확인 중</p><progress id="audioProgress" value="0" max="161" hidden aria-label="음성 자료 저장 진행률"></progress><div class="btns"><button class="btn pri" id="saveAudioPack" type="button">음성 자료 모두 저장</button><button class="btn sec" id="cancelAudioPack" type="button" hidden>저장 중단</button></div></div>
-  <div class="card"><h2>홈 화면에 추가</h2><button class="btn pri" type="button" id="installApp" hidden>앱 설치</button><p class="small">안드로이드: Chrome 메뉴 → 앱 설치 또는 홈 화면에 추가.<br>아이폰: Safari 공유 메뉴 → 홈 화면에 추가.</p><p class="small muted">입력 내용과 즐겨찾기는 사용 중인 브라우저·기기에 보관됩니다. 브라우저 데이터를 지우거나 저장 공간이 정리되면 자료가 사라질 수 있습니다.</p></div>
 </section>
 
 <!-- 개요 · 수칙 -->

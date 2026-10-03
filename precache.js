@@ -1,2 +1,0 @@
-self.PRECACHE_VERSION="80ed64ec9d6f7ae1";
-self.PRECACHE_URLS=["index.html","core.js","app.js","manifest.webmanifest","assets/icon-192.png","assets/icon-512.png","assets/law-byl14.pdf","assets/photos/45aded18ae186e13e4489038.jpg","assets/photos/7af2770b74be4f9b3fd0d210.jpg","assets/photos/d53889cedc03e66a4b139bdf.jpg","assets/photos/dff2e7e45f5961d1f70cedc9.jpg","assets/photos/ec34f6f292893ae083f8ec04.jpg","assets/photos/f303e1bb191b5e6833b4b37a.jpg"];

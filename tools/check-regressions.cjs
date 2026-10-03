@@ -1,4 +1,4 @@
-const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),C=require('../core.js');
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),C=require('../core.js');
 let n=0;
 function check(actual,expected){assert.equal(actual,expected);n++;}
 check(C.scope('civil',['900','',''],'','no',false).state,'na');
@@ -39,11 +39,4 @@ const aud=JSON.parse(source.match(/^var AUD=(.*);$/m)[1]),ph=JSON.parse(source.m
 for(const file of [...Object.values(aud),...Object.values(ph)]){assert.ok(fs.statSync(path.join(root,file)).size>1000);n++;}
 const captions=JSON.parse(require('node:child_process').execFileSync(process.execPath,[path.join(__dirname,'list-narration.cjs')],{encoding:'utf8'}));
 check(captions.filter(text=>!aud[text]).length,0);
-const worker={self:{addEventListener(){},PRECACHE_VERSION:'test'},importScripts(){},Response,Request};vm.createContext(worker);vm.runInContext(fs.readFileSync(path.join(root,'sw.js'),'utf8'),worker);
-(async()=>{
-  for(const [range,want,text] of [['bytes=2-4',206,'234'],['bytes=7-',206,'789'],['bytes=-3',206,'789'],['bytes=50-',416,'']]){
-    const response=await worker.rangeResponse(new Request('https://example.test/a.mp3',{headers:{Range:range}}),new Response('0123456789'));
-    check(response.status,want);check(await response.text(),text);
-  }
-  console.log(n+' regression checks passed (calculators, media, captions, offline audio ranges)');
-})().catch(e=>{console.error(e);process.exitCode=1;});
+console.log(n+' regression checks passed (calculators, media, captions)');

@@ -25,55 +25,62 @@ async function check() {
   assert.ok(!bundle.includes('sourceMappingURL'));
   assert.ok(!bundle.includes('function renderSearch('), 'Original internal names should be mangled');
   assert.ok(Buffer.byteLength(bundle) < fs.statSync(path.join(root, 'app.js')).size);
-  // Both the hashed bundle and every offline URL must be real production files.
-  const state = {self: {}};
-  vm.runInNewContext(read('precache.js'), state);
-  assert.ok(state.self.PRECACHE_URLS.includes(scripts[0]));
-  for (const file of state.self.PRECACHE_URLS) assert.ok(published.includes(file), 'Missing cached file: ' + file);
-  // Exercise the built service worker's install, cache, and byte-range handling.
-  const stores = new Map(), events = {};
+  assert.ok(!published.includes('precache.js'), 'No offline precache manifest');
+  assert.ok(!html.includes('data-view="offline"') && !html.includes('saveAudioPack'));
+  assert.ok(!bundle.includes('beforeinstallprompt') && !bundle.includes('serviceWorker.register('));
+  const cacheKeys = new Set(['airkeeper-base-old', 'airkeeper-audio-v1', 'other-app-cache']);
   const caches = {
-    async open(name) {
-      if (!stores.has(name)) stores.set(name, new Map());
-      const store = stores.get(name);
-      return {
-        async addAll(urls) {
-          for (const url of urls) store.set('https://app.test/' + url,
-            new Response(fs.readFileSync(path.join(output, url))));
-        },
-        async match(request) {
-          const key = typeof request === 'string' ? request : request.url;
-          return store.get(new URL(key, 'https://app.test/').href)?.clone();
-        },
-        async put(url, response) {store.set(url, response.clone());}
-      };
-    },
-    async keys() {return [...stores.keys()];},
-    async delete(name) {return stores.delete(name);}
+    async keys() {return [...cacheKeys];},
+    async delete(name) {return cacheKeys.delete(name);}
   };
-  const worker = {
-    self: {location: {origin: 'https://app.test'}, clients: {async claim() {}},
-      async skipWaiting() {}, addEventListener(name, listener) {events[name] = listener;}},
-    caches, Request, Response, URL,
-    fetch: async () => {throw new Error('Offline');}
-  };
-  const context = vm.createContext(worker);
-  worker.importScripts = file => vm.runInContext(read(file), context);
-  vm.runInContext(read('sw.js'), context);
+  const events = {};
+  let skipped = false, claimed = false, unregistered = false;
+  const worker = {self: {
+    async skipWaiting() {skipped = true;},
+    clients: {async claim() {claimed = true;}},
+    registration: {async unregister() {unregistered = true; return true;}},
+    addEventListener(name, listener) {events[name] = listener;}
+  }, caches};
+  vm.runInNewContext(read('sw.js'), worker);
+  assert.equal(events.fetch, undefined, 'Retirement worker must never serve offline responses');
   let install;
   events.install({waitUntil(task) {install = task;}});
   await install;
-  let offline;
-  events.fetch({request: new Request('https://app.test/' + scripts[0]), respondWith(task) {offline = task;}});
-  assert.equal(await (await offline).text(), bundle);
-  const audio = await caches.open('airkeeper-audio-v1');
-  await audio.put('https://app.test/assets/audio/test.mp3', new Response('0123456789'));
-  let partial;
-  events.fetch({request: new Request('https://app.test/assets/audio/test.mp3',
-    {headers: {Range: 'bytes=2-4'}}), respondWith(task) {partial = task;}});
-  const response = await partial;
-  assert.equal(response.status, 206);
-  assert.equal(await response.text(), '234');
-  console.log('Production checks passed: allowlist, minified bundle, no maps, offline cache, audio ranges');
+  let activation;
+  events.activate({waitUntil(task) {activation = task;}});
+  await activation;
+  assert.ok(skipped && claimed && unregistered);
+  assert.deepEqual([...cacheKeys], ['other-app-cache']);
+
+  // The new app must also retire an existing controller without erasing drafts.
+  const source = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
+  const cleanup = source.match(/async function retireOffline\(\)\{[\s\S]*?\n\}/)[0];
+  const saved = new Map([['ms.packDate','old'], ['ms.packVersion','old'],
+    ['ms2.draft','draft'], ['ms.favorites','favorites'], ['ms.theme','dark']]);
+  let ownRemoved = false, otherRemoved = false, reloads = 0;
+  const registration = {active: {scriptURL: 'https://app.test/sw.js'},
+    async unregister() {ownRemoved = true; return true;}};
+  const unrelated = {active: {scriptURL: 'https://app.test/other/sw.js'},
+    async unregister() {otherRemoved = true; return true;}};
+  const app = {window: {caches}, caches, URL, console,
+    location: {href: 'https://app.test/?update=online#home', reload() {reloads++;}},
+    navigator: {onLine: true, serviceWorker: {controller: registration.active,
+      async getRegistrations() {return [registration, unrelated];}}},
+    localStorage: {removeItem(key) {saved.delete(key);}}};
+  cacheKeys.add('airkeeper-base-old'); cacheKeys.add('airkeeper-audio-v1');
+  await vm.runInNewContext(cleanup + '\nretireOffline();', app);
+  assert.ok(ownRemoved && !otherRemoved);
+  assert.equal(reloads, 1);
+  assert.deepEqual([...cacheKeys], ['other-app-cache']);
+  assert.deepEqual([...saved.keys()], ['ms2.draft', 'ms.favorites', 'ms.theme']);
+  app.navigator.serviceWorker.getRegistrations = async () => {throw new Error('Restricted storage');};
+  app.console = {warn() {}};
+  await vm.runInNewContext(cleanup + '\nretireOffline();', app);
+  assert.equal(reloads, 1, 'Cleanup failure must not cause a reload loop');
+  const config = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'));
+  assert.ok(config.headers.some(rule => rule.source === '/(.*)' && rule.headers.some(
+    header => header.key === 'Cache-Control' && header.value === 'no-store')));
+  console.log('Production checks passed: minified allowlist, no offline pack, scoped cache retirement, drafts retained');
+
 }
 check().catch(error => {console.error(error); process.exitCode = 1;});
