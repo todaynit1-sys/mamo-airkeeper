@@ -107,6 +107,9 @@ main{max-width:47rem;margin:0 auto;padding:16px 16px calc(5.2rem + env(safe-area
 .hero::after{content:"";position:absolute;right:-70px;bottom:-90px;width:240px;height:240px;border-radius:50%;background:rgba(255,255,255,.08)}
 .hero-chip{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:var(--r-full);background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22)}
 .hero h1{font-size:25px;font-weight:800;letter-spacing:-.02em;position:relative;z-index:1}
+.hero-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;position:relative;z-index:1}
+.hero-heading h1{font-size:clamp(16px,4.5vw,25px);min-width:0;white-space:nowrap}
+.hero-heading .hero-btn{align-self:center;flex:none;min-height:44px;padding:6px 10px;font-size:12px;white-space:nowrap}
 .hero p{font-size:13.5px;opacity:.88;position:relative;z-index:1;max-width:32em}
 .stats{display:flex;flex-wrap:wrap;gap:8px;position:relative;z-index:1}
 .stat{display:flex;align-items:baseline;gap:6px;padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2)}
@@ -287,8 +290,6 @@ main{padding:12px 14px calc(5.4rem + env(safe-area-inset-bottom,0px))}
 .modcard .mico{width:50px;height:50px;border-radius:14px}
 .modcard h2{font-size:19px;font-weight:800;letter-spacing:-.02em}
 .modcard p{font-size:13.5px;color:var(--fg-muted)}
-.modcard .mtags{display:flex;flex-wrap:wrap;gap:6px}
-.modcard .go{display:flex;align-items:center;justify-content:space-between;font-weight:800;color:var(--primary);font-size:14.5px;border-top:1px solid var(--border);padding-top:12px}
 .seg button{min-height:46px}
 .rh{display:flex;align-items:center;gap:8px;font-size:17px;margin:0 0 10px}
 .rh b{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--primary);color:var(--primary-fg);font-size:13px;flex:none}
@@ -550,21 +551,19 @@ main p:not(.maker) a{display:inline-block;padding:8px 4px;margin:-8px -4px}
 <section class="view" data-view="home">
   <div class="hero">
     <span class="hero-chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg>미세먼지 불법배출 예방·감시 지원 사업</span>
+    <div class="hero-heading">
     <h1>민간점검단 업무지원</h1>
-    <p>비산먼지·대기배출사업장 외부 감시와 보고를 돕습니다.</p>
     <a class="hero-btn" href="https://www.law.go.kr/법령/대기환경보전법" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg>법령 원문</a>
+    </div>
+    <p>비산먼지·대기배출사업장 외부 감시와 보고를 돕습니다.</p>
   </div>
   <button class="modcard" type="button" data-go="dust">
     <div class="mtop"><span class="mico t-amber" id="icoDust"></span><div><div class="eyebrow">감시 1 · 법 제43조</div><h2>비산먼지 억제조치 감시</h2></div></div>
     <p>공사장·야적장의 방진벽·방진덮개·세륜·살수 이행 여부 확인</p>
-    <div class="mtags"><span class="badge b-teal" id="tagDust1"></span><span class="badge b-info">별표 13·14·15·36</span><span class="badge b-ok">현장 사진·그림</span></div>
-    <span class="go">업무 바로가기<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
   </button>
   <button class="modcard" type="button" data-go="air">
     <div class="mtop"><span class="mico t-sky" id="icoAir"></span><div><div class="eyebrow">감시 2 · 법 제23·31조</div><h2>대기배출사업장 감시</h2></div></div>
     <p>방지시설 미가동·가지배출관·부식 방치 등 외부에서 보이는 위반 의심 확인</p>
-    <div class="mtags"><span class="badge b-teal" id="tagAir1"></span><span class="badge b-info">위반사례 15건 · 처분 기준</span></div>
-    <span class="go">업무 바로가기<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
   </button>
   <div class="menu">
     <button class="mcard" type="button" data-go="rep"><span class="mico t-teal" id="icoRep"></span><span class="mtxt"><b>보고문안 초안</b><span>입력하면 초안 완성 · 복사해서 업무폰에</span></span></button>
@@ -1006,7 +1005,6 @@ var IC={
 };
 function svg(n){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+IC[n]+'</svg>';}
 $("icoDust").innerHTML=svg("dust");$("icoAir").innerHTML=svg("air");$("icoRep").innerHTML=svg("rep");$("icoRules").innerHTML=svg("rules");
-$("tagDust1").textContent="점검 "+DITEMS.length+"항목"; $("tagAir1").textContent="외부 신호 "+AITEMS.length+"항목";
 var TABS=[["home","홈"],["dust","비산먼지"],["air","대기배출"],["rep","보고문안"],["rules","사업개요"]];
 $("tabbar").innerHTML=TABS.map(function(t){return '<button class="tab" type="button" data-go="'+t[0]+'">'+svg(t[0])+t[1]+'</button>';}).join("");
 
